@@ -44,13 +44,26 @@ async def on_message(message):
     if message.content.startswith(bot.command_prefix):
         await bot.process_commands(message)
 
-# Example command
 @bot.command(name='ping')
 async def ping(ctx):
     """Responds with 'Pong!'."""
     await ctx.send('Pong!')
 
+def getImage():
+    """Returns a dummy image and word for skribbl.io game."""
+    # In a real implementation, this function would fetch an image and a word
+    return "images/image.png", "example_word"
 
+@bot.command(name='skribbl')
+async def skribbl(ctx):
+    """Sends an image of a skribbl.io game and starts guessing game."""
+    image, word = getImage()
+    skribbl_image_url = "https://example.com/skribbl_image.png"  # Replace with actual image URL
+    await ctx.send(
+        "Guess the word : " + '_' * len(word),
+        file=discord.File(skribbl_image_url, filename=image)
+    )
+    
 
 # Run the bot with the token
 if __name__ == '__main__':
