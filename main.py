@@ -84,15 +84,32 @@ async def skribbl(ctx):
         ##########################
         time_period = 1          # debug
         ##########################
-        await asyncio.sleep(time_period = 30)
+        await asyncio.sleep(time_period)
         idx = random.choice(unrevealed_indices)
         revealed[idx] = True
         unrevealed_indices.remove(idx)
+
+        def check(m):
+            return (
+                m.channel == ctx.channel
+                and m.author != bot.user
+                and m.content.strip().lower() == word.lower()
+            )
+        try:
+            guess = await bot.wait_for('message', timeout=time_period, check=check)
+            await ctx.send(f"🎉 {guess.author.mention} guessed the word: {word.upper()}!")
+            break
+        except asyncio.TimeoutError:
+            pass
+
         try:
             await msg.edit(content=f"Guess the word : {display_word()}")
         except discord.NotFound:
             await ctx.send("Message not found or has been deleted.")
             break  # Message deleted or not found
+        if not unrevealed_indices:
+            await ctx.send(f"Game over! The word was: {word.upper()}")
+            break
     
 
 # Run the bot with the token
