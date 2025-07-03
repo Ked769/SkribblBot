@@ -2,6 +2,9 @@ import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
+import asyncio
+import random
+import string
 
 # Load environment variables from .env file
 load_dotenv()
@@ -52,17 +55,44 @@ async def ping(ctx):
 def getImage():
     """Returns a dummy image and word for skribbl.io game."""
     # In a real implementation, this function would fetch an image and a word
-    return "images/image.png", "example_word"
+    return "images/image.png", "example word"
 
 @bot.command(name='skribbl')
 async def skribbl(ctx):
-    """Sends an image of a skribbl.io game and starts guessing game."""
+    """Sends an image of a skribbl.io game and starts guessing game, revealing a random letter every 30 seconds."""
     image, word = getImage()
-    skribbl_image_url = "https://example.com/skribbl_image.png"  # Replace with actual image URL
-    await ctx.send(
-        "Guess the word : " + '_' * len(word),
-        file=discord.File(skribbl_image_url, filename=image)
+    skribbl_image_url = image
+    BIG_DASH = '⬛ '
+    revealed = [not ch.isalpha() for ch in word]
+    display_word = lambda: ''.join(
+        (ch.upper() if revealed[i] else BIG_DASH) if ch.isalpha() else ch
+        for i, ch in enumerate(word)
     )
+    try:
+        with open(skribbl_image_url, "rb") as f:
+            msg = await ctx.send(
+                f"Guess the word : {display_word()}",
+                file=discord.File(f, filename=os.path.basename(image))
+            )
+    except FileNotFoundError:
+        await ctx.send("Image file not found. Please check the image path.")
+        return
+
+    unrevealed_indices = [i for i, ch in enumerate(word) if ch.isalpha() and not revealed[i]]
+
+    while unrevealed_indices:
+        ##########################
+        time_period = 1          # debug
+        ##########################
+        await asyncio.sleep(time_period = 30)
+        idx = random.choice(unrevealed_indices)
+        revealed[idx] = True
+        unrevealed_indices.remove(idx)
+        try:
+            await msg.edit(content=f"Guess the word : {display_word()}")
+        except discord.NotFound:
+            await ctx.send("Message not found or has been deleted.")
+            break  # Message deleted or not found
     
 
 # Run the bot with the token
